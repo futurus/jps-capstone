@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Stack;
 
 /**
  * @author Your name here.
@@ -18,6 +19,7 @@ import java.util.ArrayList;
  */
 public class CapGraph implements Graph {
 	private HashMap<Integer, HashSet<Integer>> graph = new HashMap<>();
+	private HashMap<Integer, HashSet<Integer>> graphTranspose = new HashMap<>();
 	private int nVertex = 0;
 	private int nEdge = 0;
 	
@@ -29,6 +31,8 @@ public class CapGraph implements Graph {
 		if (!graph.containsKey(num)) {
 			graph.put(num, new HashSet<Integer>());
 			nVertex++;
+			
+			graphTranspose.put(num, new HashSet<Integer>());
 		}
 		
 	}
@@ -47,6 +51,7 @@ public class CapGraph implements Graph {
 		if (to != from) {
 			graph.get(from).add(to);
 			nEdge++;
+			graphTranspose.get(to).add(from);
 		}
 	}
 
@@ -60,6 +65,10 @@ public class CapGraph implements Graph {
 	
 	public Set<Integer> getVertices() {
 		return graph.keySet();
+	}
+	
+	public Set<Integer> getNeighbors(int v) {
+		return graph.get(v);
 	}
 	
 	public boolean hasVertex(int vertex) {
@@ -114,10 +123,59 @@ public class CapGraph implements Graph {
 	 */
 	@Override
 	public List<Graph> getSCCs() {
+		List<Graph> sccs = new ArrayList<Graph>();
 		
-		return new ArrayList<Graph>();
+		Set<Integer> visited = new HashSet<>();
+		Stack<Integer> vertices = dfs(graph, this.getVertices());
+		
+		while (!vertices.isEmpty()) {
+			int v = vertices.pop();
+			
+			if (!visited.contains(v)) {
+				Graph g = new CapGraph();
+				dfs_visit(graphTranspose, v, visited, null, g);
+				sccs.add(g);
+			}
+		}
+		
+		return sccs;
 	}
 
+	public Stack<Integer> dfs(HashMap<Integer, HashSet<Integer>> g, Set<Integer> vs) {
+		// quickly convert to Stack for operation
+		Stack<Integer> vertices = new Stack<>();
+		vertices.addAll(vs);
+		
+		Set<Integer> visited = new HashSet<>();
+		Stack<Integer> finished = new Stack<>();
+		
+		while (!vertices.isEmpty()) {
+			int v = vertices.pop();
+			
+			if (!visited.contains(v)) {
+				dfs_visit(g, v, visited, finished, null);
+			}
+		}
+		
+		return finished;
+	}
+	
+	public void dfs_visit(HashMap<Integer, HashSet<Integer>> g, int v, Set<Integer> visited, Stack<Integer> finished, Graph newg) {
+		visited.add(v);
+		
+		// build SSC if newg is not null
+		if (newg != null)
+			newg.addVertex(v);
+		
+		for (int n : g.get(v)) {
+			if (!visited.contains(n)) {
+				dfs_visit(g, n, visited, finished, newg);
+			}
+		}
+		if (finished != null)
+			finished.add(v);
+	}
+	
 	/* (non-Javadoc)
 	 * @see graph.Graph#exportGraph()
 	 */
