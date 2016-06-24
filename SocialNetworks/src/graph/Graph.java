@@ -2,8 +2,8 @@ package graph;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
+import java.util.List;
 
 public interface Graph {
     /* Creates a vertex with the given number. */
@@ -12,6 +12,14 @@ public interface Graph {
     /* Creates an edge from the first vertex to the second. */
     public void addEdge(int from, int to);
 
+    public int numVertex();
+    public int numEdge();
+    
+    public Set<Integer> getVertices();
+    
+    public boolean hasVertex(int vertex);
+    public boolean hasEdge(int from, int to);
+    
     /* Finds the egonet centered at a given node. */
     public Graph getEgonet(int center);
 
