@@ -1,5 +1,8 @@
 package graph;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.ujmp.core.*;
 import org.ujmp.core.calculation.Calculation;
 //import org.ujmp.core.util.MathUtil;
@@ -18,6 +21,27 @@ public class UJMP {
 		return r;
 	}
 	
+	public static List<List<Integer>> getClusters(SparseMatrix m) {
+		List<List<Integer>> clusters = new ArrayList<>();
+		List<Matrix> rows = m.getRowList();
+		
+		for (Matrix row : rows) {
+			List<Integer> cluster = new ArrayList<>();
+			if (row != null) {
+				Matrix val = row.gt(Calculation.NEW, 0.0);
+								
+				for (int i = 0; i < val.getSize(1); i++) {
+					if (val.getAsBoolean(0, i) == true) {
+						cluster.add(i);
+					}
+				}
+				clusters.add(cluster);
+			}
+		}
+		
+		return clusters;
+	}
+	
 	public static void main(String[] args) {
 		// create a very large sparse matrix
 		SparseMatrix m = SparseMatrix.Factory.zeros(5, 4);
@@ -27,9 +51,21 @@ public class UJMP {
 		m.setAsDouble(0.5, 3, 2);
 		m.setAsDouble(0.1, 3, 3);
 		m.setAsDouble(0.7, 4, 3);
-		System.out.println(m.sum(Calculation.NEW, 0, false));
-		Matrix s = normalize(m);
-		System.out.println(s.sum(Calculation.NEW, 0, false));
+		System.out.println(m);
+		
+		List<List<Integer>> clusters = getClusters(m);
+		int i = 1;
+		for (List<Integer> cluster : clusters) {
+			System.out.print("Cluster " + i++ + ": [");
+			for (Integer e : cluster) {
+				System.out.print(e + " ");
+			}
+			System.out.print("]");
+			System.out.println();
+		}
+		
+		/*Matrix s = normalize(m);
+		System.out.println(s.sum(Calculation.NEW, 0, false));*/
 		
 		System.out.println("Done");
 	}
