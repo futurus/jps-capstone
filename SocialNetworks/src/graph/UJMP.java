@@ -27,9 +27,9 @@ public class UJMP {
 		m.setAsDouble(0.5, 3, 2);
 		m.setAsDouble(0.1, 3, 3);
 		m.setAsDouble(0.7, 4, 3);
-		System.out.println(m);
+		System.out.println(m.sum(Calculation.NEW, 0, false));
 		Matrix s = normalize(m);
-		System.out.println(s);
+		System.out.println(s.sum(Calculation.NEW, 0, false));
 		
 		System.out.println("Done");
 	}
