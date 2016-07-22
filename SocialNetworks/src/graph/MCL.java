@@ -11,12 +11,12 @@ import org.ujmp.core.*;
 import org.ujmp.core.calculation.Calculation;
 
 public class MCL {
-	static final int NUM_OF_AUTHORS = 5000;
+	static final int NUM_OF_AUTHORS = 300;
 	static Map<Integer, String> authors = new HashMap<>();
 	static Map<Integer, Integer> authorIndices = new HashMap<>();
 	static SparseMatrix adjMatrix = SparseMatrix.Factory.zeros(NUM_OF_AUTHORS, NUM_OF_AUTHORS);
-		
-	public static void loadMatrix(SparseMatrix m, String filename) {
+	
+	public static void loadMatrix(String filename) {
         Scanner sc;
         try {
             sc = new Scanner(new File(filename));
@@ -25,23 +25,22 @@ public class MCL {
             return;
         }
         String[] nums;
+        int row = 0;
         
         while (sc.hasNextLine()) {
-        	nums = sc.nextLine().split("\t");
-            int i = Integer.parseInt(nums[0]);
-            int j = Integer.parseInt(nums[1]);
+        	nums = sc.nextLine().split(",");
 
-            // graph is undirected, hence matrix is symmetrical
-            m.setAsDouble(1, i, j);
-            m.setAsDouble(1, j, i);
+        	for (int col = 0; col < nums.length; col++) {
+        		double val = Double.parseDouble(nums[col]);
+        		if (val != 0.0) {
+        			adjMatrix.setAsDouble(val, row, col);
+        		}
+        	}
+
+        	row++;
         }
-        
         sc.close();
     }
-	
-	/*public static void loadDefinition(Map m, String filename) {
-		return;
-	}*/
 	
 	public static SparseMatrix normalize(SparseMatrix m) {
 		Matrix s = m.sum(Calculation.NEW, 0, false); // column-wise sum
@@ -74,8 +73,10 @@ public class MCL {
 	
 	public static boolean stop(SparseMatrix m, double epsilon) {
 		SparseMatrix r = (SparseMatrix)m.times(m).minus(m);
+		double max = r.getMaxValue() < epsilon ? 0 : r.getMaxValue();
+		double min = r.getMinValue() < epsilon ? 0 : r.getMinValue();
 		
-		if (Math.abs(r.getMaxValue() - r.getMinValue()) < epsilon) {
+		if (max - min == 0) {
 			return true;
 		}
 		
@@ -109,39 +110,42 @@ public class MCL {
 										  Double mult_factor, 
 										  Integer max_loops, 
 										  Double epsilon) {
-		int 	exp_f = expand_factor  != null? expand_factor  : 5;
-		double 	inf_f = inflate_factor != null? inflate_factor : 5;
+		int 	exp_f = expand_factor  != null? expand_factor  : 2;
+		double 	inf_f = inflate_factor != null? inflate_factor : 2;
 		double 	mul_f = mult_factor    != null? mult_factor    : 2;
-		int 	max_l = max_loops 	   != null? max_loops 	   : 10000;
-		double 	eps   = epsilon 	   != null? epsilon 	   : 0.000001;
+		int 	max_l = max_loops 	   != null? max_loops 	   : 60;
+		double 	eps   = epsilon 	   != null? epsilon 	   : 0.0000000001;
 		
 		m = selfLoop(m, mul_f);
 		m = normalize(m);
-		
+
 		for (int i = 0; i < max_l; i++) {
 			m = inflate(m, inf_f);
 			m = expand(m, exp_f);
 			
-			if (stop(m, eps)) break;
+			if (stop(m, eps)) {
+				break;
+			}
 		}
 		
 		return getClusters(m);
 	}
 	
 	public static void main(String[] args) {
-		final String FILENAME = "data\\DBLP_APA.txt";
+		final String FILENAME = "data\\example.csv";
 		PrintWriter writer;
 		long startTime, endTime;
 		
 		try {
-            writer = new PrintWriter("data\\DBLP_clusters.txt", "UTF-8");;
+            writer = new PrintWriter("data\\example_clusters.txt", "UTF-8");;
         } catch (Exception e) {
             e.printStackTrace();
             return;
         }
 		
 		startTime = System.currentTimeMillis();
-		loadMatrix(adjMatrix, FILENAME);
+		loadMatrix(FILENAME);
+		
 		endTime   = System.currentTimeMillis();
 		writer.print("Done reading file: ");
 		writer.println(endTime - startTime);

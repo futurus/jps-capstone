@@ -45,6 +45,7 @@ public class UJMP {
 	public static void main(String[] args) {
 		// create a very large sparse matrix
 		SparseMatrix m = SparseMatrix.Factory.zeros(5, 4);
+		System.out.println(m);
 		m.setAsDouble(0.5, 0, 0);
 		m.setAsDouble(0.25, 1, 0);
 		m.setAsDouble(0.25, 0, 1);
