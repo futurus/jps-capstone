@@ -61,8 +61,8 @@ public class MCL {
 	}
 	
 	public static SparseMatrix expand(SparseMatrix m, int expand_factor) {
-		for (int i = 0; i < expand_factor; i++) {
-			m = (SparseMatrix) m.times(m);
+		for (int i = 1; i < expand_factor; i++) {
+			m = (SparseMatrix) m.mtimes(m);
 		}
 		return m;
 	}
@@ -72,15 +72,25 @@ public class MCL {
 	}
 	
 	public static boolean stop(SparseMatrix m, double epsilon) {
-		SparseMatrix r = (SparseMatrix)m.times(m).minus(m);
-		double max = r.getMaxValue() < epsilon ? 0 : r.getMaxValue();
-		double min = r.getMinValue() < epsilon ? 0 : r.getMinValue();
+		SparseMatrix r = (SparseMatrix)m.mtimes(m).minus(m);
+		double max = r.getMaxValue() < epsilon ? 0.0 : r.getMaxValue();
+		double min = r.getMinValue() < epsilon ? 0.0 : r.getMinValue();
 		
 		if (max - min == 0) {
 			return true;
 		}
 		
 		return false;
+	}
+	
+	public static void prune(double epsilon) {
+		for (int col = 0; col < NUM_OF_AUTHORS; col++) {
+			for (int row = 0; row < NUM_OF_AUTHORS; row++) {
+				if (adjMatrix.getAsDouble(row, col) <= epsilon) {
+					adjMatrix.setAsDouble(0.0, row, col);
+				}
+			}
+		}
 	}
 	
 	public static List<List<Integer>> getClusters(SparseMatrix m) {
@@ -109,25 +119,26 @@ public class MCL {
 										  Double inflate_factor, 
 										  Double mult_factor, 
 										  Integer max_loops, 
-										  Double epsilon) {
+										  Double epsilon,
+										  PrintWriter writer) {
 		int 	exp_f = expand_factor  != null? expand_factor  : 2;
 		double 	inf_f = inflate_factor != null? inflate_factor : 2;
 		double 	mul_f = mult_factor    != null? mult_factor    : 2;
-		int 	max_l = max_loops 	   != null? max_loops 	   : 60;
+		int 	max_l = max_loops 	   != null? max_loops 	   : 40;
 		double 	eps   = epsilon 	   != null? epsilon 	   : 0.0000000001;
 		
 		m = selfLoop(m, mul_f);
 		m = normalize(m);
-
-		for (int i = 0; i < max_l; i++) {
+		
+		for (int j = 0; j < max_l; j++) {
 			m = inflate(m, inf_f);
+			m = normalize(m);
 			m = expand(m, exp_f);
 			
-			if (stop(m, eps)) {
-				break;
-			}
+//			if (stop(m, eps)) {
+//				break;
+//			}
 		}
-		
 		return getClusters(m);
 	}
 	
@@ -151,7 +162,7 @@ public class MCL {
 		writer.println(endTime - startTime);
 		
 		startTime = endTime;
-		List<List<Integer>> clusters = mcl(adjMatrix, null, null, null, null, null);
+		List<List<Integer>> clusters = mcl(adjMatrix, null, null, null, null, null, writer);
 				
 		endTime   = System.currentTimeMillis();
 		writer.print("Done finding clusters: ");
