@@ -53,7 +53,7 @@ public class UJMP {
 		m.setAsDouble(0.1, 3, 3);
 		m.setAsDouble(0.7, 4, 3);
 		System.out.println(m);
-		
+
 		List<List<Integer>> clusters = getClusters(m);
 		int i = 1;
 		for (List<Integer> cluster : clusters) {

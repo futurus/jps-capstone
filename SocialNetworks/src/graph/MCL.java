@@ -76,6 +76,9 @@ public class MCL {
 		double max = r.getMaxValue() < epsilon ? 0.0 : r.getMaxValue();
 		double min = r.getMinValue() < epsilon ? 0.0 : r.getMinValue();
 		
+		System.out.println(max);
+		System.out.println(min);
+		
 		if (max - min == 0) {
 			return true;
 		}
@@ -83,14 +86,16 @@ public class MCL {
 		return false;
 	}
 	
-	public static void prune(double epsilon) {
+	public static SparseMatrix prune(SparseMatrix m, double epsilon) {
 		for (int col = 0; col < NUM_OF_AUTHORS; col++) {
 			for (int row = 0; row < NUM_OF_AUTHORS; row++) {
-				if (adjMatrix.getAsDouble(row, col) <= epsilon) {
-					adjMatrix.setAsDouble(0.0, row, col);
+				double val = m.getAsDouble(row, col);
+				if (val != 0 && val <= epsilon) {
+					m.setAsDouble(0.0, row, col);
 				}
 			}
 		}
+		return m;
 	}
 	
 	public static List<List<Integer>> getClusters(SparseMatrix m) {
@@ -125,30 +130,31 @@ public class MCL {
 		double 	inf_f = inflate_factor != null? inflate_factor : 2;
 		double 	mul_f = mult_factor    != null? mult_factor    : 2;
 		int 	max_l = max_loops 	   != null? max_loops 	   : 40;
-		double 	eps   = epsilon 	   != null? epsilon 	   : 0.0000000001;
+		double 	eps   = epsilon 	   != null? epsilon 	   : 0.00000001;
 		
 		m = selfLoop(m, mul_f);
 		m = normalize(m);
 		
 		for (int j = 0; j < max_l; j++) {
+			m = prune(m, eps);
 			m = inflate(m, inf_f);
 			m = normalize(m);
 			m = expand(m, exp_f);
 			
-//			if (stop(m, eps)) {
-//				break;
-//			}
+			if (stop(m, eps)) {
+				break;
+			}
 		}
 		return getClusters(m);
 	}
 	
 	public static void main(String[] args) {
-		final String FILENAME = "data\\example.csv";
+		final String FILENAME = "data/example.csv";
 		PrintWriter writer;
 		long startTime, endTime;
 		
 		try {
-            writer = new PrintWriter("data\\example_clusters.txt", "UTF-8");;
+            writer = new PrintWriter("data/example_clusters.txt", "UTF-8");;
         } catch (Exception e) {
             e.printStackTrace();
             return;
