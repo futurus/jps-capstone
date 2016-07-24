@@ -11,9 +11,7 @@ import org.ujmp.core.*;
 import org.ujmp.core.calculation.Calculation;
 
 public class MCL {
-	static final int NUM_OF_AUTHORS = 300;
-	static Map<Integer, String> authors = new HashMap<>();
-	static Map<Integer, Integer> authorIndices = new HashMap<>();
+	static final int NUM_OF_AUTHORS = 5000;
 	static SparseMatrix adjMatrix = SparseMatrix.Factory.zeros(NUM_OF_AUTHORS, NUM_OF_AUTHORS);
 	
 	public static void loadMatrix(String filename) {
@@ -25,19 +23,14 @@ public class MCL {
             return;
         }
         String[] nums;
-        int row = 0;
         
         while (sc.hasNextLine()) {
-        	nums = sc.nextLine().split(",");
-
-        	for (int col = 0; col < nums.length; col++) {
-        		double val = Double.parseDouble(nums[col]);
-        		if (val != 0.0) {
-        			adjMatrix.setAsDouble(val, row, col);
-        		}
-        	}
-
-        	row++;
+        	nums = sc.nextLine().split("\t");
+        	int i = Integer.parseInt(nums[0]);
+        	int j = Integer.parseInt(nums[1]);
+        	
+        	adjMatrix.setAsDouble(1.0, i, j);
+        	adjMatrix.setAsDouble(1.0, j, i);
         }
         sc.close();
     }
@@ -75,9 +68,6 @@ public class MCL {
 		SparseMatrix r = (SparseMatrix)m.mtimes(m).minus(m);
 		double max = r.getMaxValue() < epsilon ? 0.0 : r.getMaxValue();
 		double min = r.getMinValue() < epsilon ? 0.0 : r.getMinValue();
-		
-		System.out.println(max);
-		System.out.println(min);
 		
 		if (max - min == 0) {
 			return true;
@@ -128,7 +118,7 @@ public class MCL {
 										  PrintWriter writer) {
 		int 	exp_f = expand_factor  != null? expand_factor  : 2;
 		double 	inf_f = inflate_factor != null? inflate_factor : 2;
-		double 	mul_f = mult_factor    != null? mult_factor    : 2;
+		double 	mul_f = mult_factor    != null? mult_factor    : 1;
 		int 	max_l = max_loops 	   != null? max_loops 	   : 40;
 		double 	eps   = epsilon 	   != null? epsilon 	   : 0.00000001;
 		
@@ -149,12 +139,12 @@ public class MCL {
 	}
 	
 	public static void main(String[] args) {
-		final String FILENAME = "data/example.csv";
+		final String FILENAME = "data/DBLP_APA.txt";
 		PrintWriter writer;
 		long startTime, endTime;
 		
 		try {
-            writer = new PrintWriter("data/example_clusters.txt", "UTF-8");;
+            writer = new PrintWriter("data/DBLP_clusters.txt", "UTF-8");;
         } catch (Exception e) {
             e.printStackTrace();
             return;
