@@ -4,8 +4,6 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Scanner;
 import org.ujmp.core.*;
 import org.ujmp.core.calculation.Calculation;
@@ -29,12 +27,16 @@ public class MCL {
         	int i = Integer.parseInt(nums[0]);
         	int j = Integer.parseInt(nums[1]);
         	
+        	// because we have an undirected graph, we set both
+        	// adjMatrix[i,j] and adjMatrix[j,i] to 1.0
         	adjMatrix.setAsDouble(1.0, i, j);
         	adjMatrix.setAsDouble(1.0, j, i);
         }
         sc.close();
     }
 	
+	// normalize will be performed on SparseMatrix m to produce another 
+	// SparseMatrix which columns sum to 1 (transition matrix).
 	public static SparseMatrix normalize(SparseMatrix m) {
 		Matrix s = m.sum(Calculation.NEW, 0, false); // column-wise sum
 		SparseMatrix r = SparseMatrix.Factory.zeros(NUM_OF_AUTHORS, NUM_OF_AUTHORS);
@@ -49,10 +51,14 @@ public class MCL {
 		return r;
 	}
 	
+	// inflate will raise each element in matrix m to inflate_factor power
+	// this helps strengthening/weakening probabilities
 	public static SparseMatrix inflate(SparseMatrix m, double inflate_factor) {
 		return (SparseMatrix) m.power(Calculation.ORIG, inflate_factor);
 	}
 	
+	// expand will perform expansion to m, intuitively expand the connections
+	// among vertices in the same clusters
 	public static SparseMatrix expand(SparseMatrix m, int expand_factor) {
 		for (int i = 1; i < expand_factor; i++) {
 			m = (SparseMatrix) m.mtimes(m);
@@ -60,12 +66,16 @@ public class MCL {
 		return m;
 	}
 	
+	// selfLoop is added so that m[i,i] = mult_factor for all i from 0 to 4999
+	// this is so that the random-walker can stay at the same vertex
 	public static SparseMatrix selfLoop(SparseMatrix m, double mult_factor) {
 		return (SparseMatrix) m.plus(SparseMatrix.Factory.eye(NUM_OF_AUTHORS, NUM_OF_AUTHORS).times(mult_factor));
 	}
 	
+	// stop checks whether we have converged
 	public static boolean stop(SparseMatrix m, double epsilon) {
-		SparseMatrix r = (SparseMatrix)m.mtimes(m).minus(m);
+		SparseMatrix r = (SparseMatrix)inflate(m, 2).minus(m);
+
 		double max = r.getMaxValue() < epsilon ? 0.0 : r.getMaxValue();
 		double min = r.getMinValue() < epsilon ? 0.0 : r.getMinValue();
 		
@@ -76,6 +86,8 @@ public class MCL {
 		return false;
 	}
 	
+	// additional pruning to quickly reduce the number of non-zeros entries that
+	// are approaching zero
 	public static SparseMatrix prune(SparseMatrix m, double epsilon) {
 		for (int col = 0; col < NUM_OF_AUTHORS; col++) {
 			for (int row = 0; row < NUM_OF_AUTHORS; row++) {
@@ -88,6 +100,8 @@ public class MCL {
 		return m;
 	}
 	
+	// interpret the resulting converged matrix to produce clusters,
+	// which are the non-zero entries of the final matrix
 	public static List<List<Integer>> getClusters(SparseMatrix m) {
 		List<List<Integer>> clusters = new ArrayList<>();
 		List<Matrix> rows = m.getRowList();
@@ -109,6 +123,7 @@ public class MCL {
 		return clusters;
 	}
 	
+	// mcl method is the main algorithm
 	public static List<List<Integer>> mcl(SparseMatrix m, 
 										  Integer expand_factor, 
 										  Double inflate_factor, 
@@ -116,6 +131,7 @@ public class MCL {
 										  Integer max_loops, 
 										  Double epsilon,
 										  PrintWriter writer) {
+		// default values for parameters
 		int 	exp_f = expand_factor  != null? expand_factor  : 2;
 		double 	inf_f = inflate_factor != null? inflate_factor : 2;
 		double 	mul_f = mult_factor    != null? mult_factor    : 1;
